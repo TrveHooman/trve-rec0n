@@ -1,99 +1,83 @@
-# Automated Asset Discovery & Behavioral Drift Monitoring
+# Automated Asset Discovery and Behavioral Drift Monitoring
 
-A robust, bash-based reconnaissance pipeline built for continuous attack surface monitoring. Instead of endlessly dumping raw data, this tool focuses on **deltas**—tracking behavioral changes across your targets and alerting you only when actionable shifts occur.
+A bash-based reconnaissance pipeline designed for continuous attack surface monitoring. This tool focuses on stateful tracking, identifying deltas (changes) between scans to highlight new assets and behavioral shifts.
 
-## Core Pipeline
-```text
-roots.txt 
-   │
-   ├─► [01] Subdomain Discovery (subfinder)
-   ├─► [02] DNS Resolution & IP Drift (dnsx)
-   ├─► [03] Live Host Probing & State Tracking (httpx)
-   └─► [04] Visual Recon on Fresh Hosts (gowitness)
+## Pipeline Overview
 
-```
+1. Subdomain Discovery (subfinder)
+2. DNS Resolution and IP Tracking (dnsx)
+3. HTTP Probing and State Analysis (httpx)
+4. Visual Reconnaissance (gowitness)
 
 ## Key Features
 
-* **Stateful Drift Detection:** Persists historical data to detect and report changes in HTTP Status Codes, Page Titles, TLS Certificates, and DNS/IP resolutions.
-* **High-Value Alerts:** Explicitly flags critical transitions (e.g., a `403 Forbidden` or `401 Unauthorized` endpoint suddenly returning `200 OK`).
-* **Heartbeat Mode (`REVALIDATE_ONLY`):** Bypasses heavy discovery phases to rapidly re-probe known infrastructure for immediate state changes.
-* **Tarpit Resilience:** Hardened with OS-level timeouts (`timeout 30m`), file descriptor limits (`ulimit -n`), and mechanisms to easily blacklist connection-hanging IPs.
-* **Zero-Spam Telegram Integration:** Delivers clean, Markdown-formatted delta reports. Fails silently if no changes or fresh hosts are detected.
-* **Flat File Structure:** Overwrites intermediate files per run, keeping your `results/` directory clean while maintaining historical state via prefixed tracking files.
+* Behavioral Drift Detection: Persists historical data to detect changes in HTTP status codes, page titles, and DNS records.
+* High-Value Alerts: Specifically flags transitions from restricted states (401/403) to open states (200).
+* Heartbeat Mode: A rapid revalidation mode that skips discovery and focusing strictly on re-probing known live assets for status changes.
+* Stability Hardening: Implements OS-level timeouts, resource limit adjustments (ulimit), and file locking to prevent process hangs and overlapping executions.
+* Filtered Notifications: Telegram integration provides clean, markdown reports only when actionable changes are detected.
 
 ## Prerequisites
 
-Ensure the following tools are installed and accessible in your system's `$PATH` (or specifically in `~/go/bin`):
+The following tools must be installed and accessible in your system PATH or defined in your environment configuration:
 
-* [subfinder](https://github.com/projectdiscovery/subfinder)
-* [dnsx](https://github.com/projectdiscovery/dnsx)
-* [httpx](https://github.com/projectdiscovery/httpx)
-* [gowitness](https://github.com/sensepost/gowitness)
+* subfinder
+* dnsx
+* httpx
+* gowitness
+* curl, awk, timeout, flock (standard Linux utilities)
 
-*Standard Linux utilities required: `curl`, `awk`, `timeout`, `flock`.*
+## Installation and Setup
 
-## Installation & Setup
+1. Clone the repository:
+   ```bash
+   git clone [https://github.com/yourusername/your-repo.git](https://github.com/yourusername/your-repo.git) /opt/recon
+   cd /opt/recon
+   chmod +x recon.sh
 
-1. **Clone the repository:**
+   ```
+
+2. Create a .env file:
+Define your Telegram credentials and optional path overrides.
 ```bash
-git clone [https://github.com/TrveHooman/trve-rec0n.git](https://github.com/TrveHooman/trve-rec0n.git) /opt/recon
-cd /opt/recon
-chmod +x recon.sh
+TELEGRAM_BOT_TOKEN="your_bot_token"
+TELEGRAM_CHAT_ID="your_chat_id"
 
-```
-
-2. **Configure Environment Variables:**
-Create a `.env` file in the root directory:
-```env
-TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
-TELEGRAM_CHAT_ID="your_telegram_chat_id"
-
-# Optional Overrides
-# DNS_THREADS="20"
-# HTTP_THREADS="30"
+# Optional: Set this if tools are not in your cron PATH
+# GOBIN="/home/username/go/bin"
 
 ```
 
 
-3. **Define Targets:**
-Add your root domains to `roots.txt` (one per line):
-```text
-example.com
-target.io
-
-```
-
-
+3. Configure Targets:
+Add root domains to roots.txt (one per line).
 
 ## Usage
 
-### Manual Full Run
+### Manual Execution
 
-Executes the entire pipeline from discovery to screenshots.
+Run the full discovery and probing pipeline:
 
 ```bash
 ./recon.sh
 
 ```
 
-### Manual Revalidation (Heartbeat)
+### Heartbeat Mode
 
-Skips `subfinder`, `dnsx`, and `gowitness`. Strictly re-probes previously discovered live hosts to detect status/title changes.
+Run a rapid revalidation of previously discovered live hosts only:
 
 ```bash
 REVALIDATE_ONLY=true ./recon.sh
 
 ```
 
-## Automation (Cron)
+## Automation
 
-This script is designed for hands-off automation. Run a full discovery daily, and a fast revalidation heartbeat every few hours.
-
-Add the following to your crontab (`crontab -e`):
+The script is optimized for cron execution. To run a full discovery daily and a revalidation heartbeat every three hours, you can use the following crontab entries:
 
 ```cron
-# Full Discovery: Every day at 2:00 AM
+# Full Discovery: Daily at 2:00 AM
 0 2 * * * cd /opt/recon && ./recon.sh >> /opt/recon/cron_debug.log 2>&1
 
 # Heartbeat Monitoring: Every 3 hours from 6:00 AM to 9:00 PM
@@ -103,20 +87,15 @@ Add the following to your crontab (`crontab -e`):
 
 ## Output Structure
 
-Results are stored in `./results/<domain>/`. The directory uses stable, prefixed filenames that overwrite on each run.
+Results are organized by domain within the results directory. Intermediate files are overwritten each run to save space, while previous state files are maintained to facilitate drift detection.
 
 ```text
 results/[example.com/](https://example.com/)
-├── 01_subfinder.txt
-├── 02_dnsx.txt
-├── 02_current_dns.txt
-├── 02_previous_dns.txt
-├── 02_dns_changes.txt
-├── 03_httpx-live.txt
-├── 03_current_status.txt
-├── 03_previous_status.txt
-├── 03_status_changes.txt
-├── 03_fresh.txt
-└── 04_gowitness-screens/
-    └── [screenshots...]
+├── 01_subfinder.txt         # Raw discovered subdomains
+├── 02_current_dns.txt       # Current hostname|IP mapping
+├── 02_dns_changes.txt       # Detected DNS/IP shifts
+├── 03_httpx-live.txt        # Currently active HTTP targets
+├── 03_status_changes.txt    # HTTP status code deltas
+├── 03_fresh.txt             # Assets seen for the first time
+└── 04_gowitness-screens/    # Screenshots of fresh assets
 ```
