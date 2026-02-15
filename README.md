@@ -30,12 +30,12 @@ The following tools must be installed and accessible in your system PATH or defi
 ## Installation and Setup
 
 1. Clone the repository:
-   ```bash
-   git clone [https://github.com/yourusername/your-repo.git](https://github.com/yourusername/your-repo.git) /opt/recon
-   cd /opt/recon
-   chmod +x recon.sh
+```bash
+git clone [https://github.com/yourusername/your-repo.git](https://github.com/yourusername/your-repo.git) /opt/recon
+cd /opt/recon
+chmod +x recon.sh
 
-   ```
+```
 
 2. Create a .env file:
 Define your Telegram credentials and optional path overrides.
