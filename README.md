@@ -1,6 +1,6 @@
 # Automated Asset Discovery and Behavioral Drift Monitoring
 
-A bash-based reconnaissance pipeline designed for continuous attack surface monitoring. This tool focuses on stateful tracking, identifying deltas (changes) between scans to highlight new assets and behavioral shifts.
+A bash-based reconnaissance pipeline designed for continuous attack surface monitoring. This tool focuses on stateful tracking, identifying deltas (changes) between scans to highlight new assets and behavioral shifts and reporting them via Telegram.
 
 ## Pipeline Overview
 
