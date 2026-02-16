@@ -8,6 +8,7 @@ A bash-based reconnaissance pipeline designed for continuous attack surface moni
 2. DNS Resolution and IP Tracking (dnsx)
 3. HTTP Probing and State Analysis (httpx)
 4. Visual Reconnaissance (gowitness)
+5. Telegram Report
 
 ## Key Features
 
